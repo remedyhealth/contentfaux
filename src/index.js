@@ -28,40 +28,37 @@ class Contentfaux {
    */
   constructor () {
     this.request = this.request.bind(this)
-    const rootDir = process.cwd()
+    const rootDir = this._rootDir()
 
     let spaceid = ''
     let apikey = ''
-    let directory = './contentfaux'
+    let dir = './contentfaux'
     try {
       const pkg = JSON.parse(fs.readFileSync(rootDir + '/package.json'))
       const config = pkg.config.contentfaux
       spaceid = config.spaceid
       apikey = config.apikey
-      directory = config.directory
+      dir = config.dir
     } catch (err) {}
 
     this._config = {
-      run: STUB,
       spaceid: process.env.CONTENTFAUX_SPACEID || spaceid,
       apikey: process.env.CONTENTFAUX_APIKEY || apikey,
-      directory: process.env.CONTENTFAUX_DIR || directory,
+      dir: process.env.CONTENTFAUX_DIR || dir,
       cli: require.main === module
     }
 
-    // resolve the directory
-    this._config.directory = path.resolve(rootDir, this._config.directory)
-
+    let cmd = STUB
     process.argv.map(arg => {
       switch (arg) {
         case STUB:
-          this._config.run = STUB
+          cmd = STUB
           break
         case UNSTUB:
-          this._config.run = UNSTUB
+          cmd = UNSTUB
           break
         case SETUP:
-          this._config.run = SETUP
+          cmd = SETUP
           break
         case PREVIEW:
           this._conifg.preview = true
@@ -71,28 +68,22 @@ class Contentfaux {
       }
     })
 
-    this.run()
-  }
-
-  /**
-   * Runs the command.
-   */
-  run () {
-    if (this._config.run === STUB) {
+    if (cmd === STUB) {
       this.stub()
-    } else if (this._config.run === UNSTUB) {
+    } else if (cmd === UNSTUB) {
       this.unstub()
-    } else if (this._config.run === SETUP) {
-      this.syncWithContentful()
+    } else if (cmd === SETUP) {
+      this.sync()
     }
   }
 
   /**
    * Syncs the entries from contentful for local testing.
+   * @returns {Promise} A promise object that resolves after contentful mocks are created.
    */
-  syncWithContentful () {
+  sync () {
     this._log(`Setting up Contentfaux`, 'title')
-    if (!this._config.spaceid || !this._config.apikey || !this._config.directory) {
+    if (!this._config.spaceid || !this._config.apikey || !this._config.dir) {
       return Promise.reject(new Error('spaceid, apikey and directory are all required.'))
     }
 
@@ -115,11 +106,13 @@ class Contentfaux {
         }))
       })
 
+      const dir = path.resolve(this._rootDir(), this._config.dir)
+
       return Promise.all(promises).then(() => {
-        this._prepareFolder(this._config.directory)
+        this._prepareFolder(dir)
 
         for (let i in examples) {
-          this._writeFile(`${this._config.directory}/${i}.json`, JSON.stringify(examples[i]))
+          this._writeFile(`${dir}/${i}.json`, JSON.stringify(examples[i]))
         }
 
         return examples
@@ -127,6 +120,73 @@ class Contentfaux {
     }).catch(err => {
       this._log(err, 'error')
     })
+  }
+
+  /**
+   * Begins the process of stubbing (intercepts ALL request)
+   * @param {Object} [config={}] The configuration object. Uses the package.json config and env initially.
+   * @param {String} config.spaceid - The contentful space id.
+   * @param {String} config.apikey - The contentful API key.
+   * @param {String} config.dir - The directory to save the mocked information. Reletive paths are fine.
+   * @param {Boolean} [config.preview=] - If preview, set to true.
+   * @returns {Event} The event callback.
+   */
+  stub (config = {}) {
+    Object.assign(this._config, config)
+    this._log('Stubbing Contentful...', 'title')
+    this._stubbed = true
+    this._config = config
+    mitm.enable()
+    return mitm.on('request', this.request)
+  }
+
+  /**
+   * Stops stubbing
+   */
+  unstub () {
+    this._stubbed = false
+    mitm.off('request', this.request)
+    mitm.disable()
+  }
+
+  /**
+   * The request interceptor.
+   * @param {http.Request} req - The request object.
+   * @param {http.Response} res - The response object.
+   */
+  request (req, res) {
+    const parsed = this._parseRequest(req.url)
+    let ret = this._getContentType(parsed.content_type)
+    if (!parsed.limit) {
+      parsed.limit = 5
+    }
+
+    for (let i = 1; i < parsed.limit; i++) {
+      ret.items.push(ret.items[0])
+    }
+
+    res.end(JSON.stringify(ret))
+  }
+
+  /**
+   * Returns where the request came from.
+   * @returns {String}
+   */
+  _rootDir () {
+    return process.cwd()
+  }
+
+  /**
+   * Returns an stubbed content type.
+   * @param {String} type - The content type.
+   * @returns {Object} The json stubbed object.
+   */
+  _getContentType (type) {
+    if (this._stubbed) {
+      return require(path.resolve(this._rootDir(), this._config.dir, `${type}.json`))
+    }
+
+    return {}
   }
 
   /**
@@ -153,7 +213,7 @@ class Contentfaux {
       fs.readdirSync(folder).forEach((file, index) => {
         const curPath = `${folder}/${file}`
         if (fs.lstatSync(curPath).isDirectory()) { // recurse
-          this.deleteFolderRecursive(curPath)
+          this._deleteFolderRecursive(curPath)
         } else { // delete file
           fs.unlinkSync(curPath)
         }
@@ -166,7 +226,7 @@ class Contentfaux {
    * Deletes a folder and all the contents synchronously.
    * @param {String} path - The path to delete (cannot start with a "/").
    */
-  deleteFolderRecursive (path) {
+  _deleteFolderRecursive (path) {
     if (path === '/') {
       throw new Error('Path cannot start with a "/".')
     }
@@ -174,7 +234,7 @@ class Contentfaux {
       fs.readdirSync(path).forEach((file, index) => {
         var curPath = path + '/' + file
         if (fs.lstatSync(curPath).isDirectory()) { // recurse
-          this.deleteFolderRecursive(curPath)
+          this._deleteFolderRecursive(curPath)
         } else { // delete file
           fs.unlinkSync(curPath)
         }
@@ -193,32 +253,6 @@ class Contentfaux {
   }
 
   /**
-   * Begins the process of stubbing (intercepts ALL request)
-   */
-  stub (config = {}) {
-    Object.assign(this._config, config)
-    this._log('Stubbing Contentful...', 'title')
-    this._stubbed = true
-    this._config = config
-    mitm.enable()
-    return mitm.on('request', this.request)
-  }
-
-  request (req, res) {
-    const parsed = this._parseRequest(req.url)
-    let ret = this.getContentType(parsed.content_type)
-    if (!parsed.limit) {
-      parsed.limit = 5
-    }
-
-    for (let i = 1; i < parsed.limit; i++) {
-      ret.items.push(ret.items[0])
-    }
-
-    res.end(JSON.stringify(ret))
-  }
-
-  /**
    * Grabs all the query params from the url.
    * @param {String} url - The url to interfere.
    * @returns {Object} Key-value pairs of the url query name and value.
@@ -231,28 +265,6 @@ class Contentfaux {
       parsed[param[0]] = param[1]
     })
     return parsed
-  }
-
-  /**
-   * Stops stubbing
-   */
-  unstub () {
-    this._stubbed = false
-    mitm.off('request', this.request)
-    mitm.disable()
-  }
-
-  /**
-   * Returns an stubbed content type.
-   * @param {String} type - The content type.
-   * @returns {Object} The json stubbed object.
-   */
-  getContentType (type) {
-    if (this._stubbed) {
-      return require(path.resolve(this._config.dir, `${type}.json`))
-    }
-
-    return {}
   }
 
   /**
@@ -295,6 +307,11 @@ class Contentfaux {
     })
   }
 
+  /**
+   * Makes a log request.
+   * @param {String} msg - The message.
+   * @param {String} [type=bullet] - The message type.
+   */
   _log (msg, type = 'bullet') {
     console.log(colors[type](msg))
   }

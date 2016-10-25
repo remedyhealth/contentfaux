@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "runtest": "npm run build && node ./ setup",
-    "lint": "standard",
+    "predoc": "rimraf docs",
+    "doc": "esdoc -c scripts/doc.json",
+    "lint": "standard && eslint ./src/**",
     "validate-commit": "validate-commit-msg",
     "pretest": "npm run build",
     "test": "nyc _mocha --compilers js:babel-register",
@@ -45,6 +47,8 @@
     "chai": "^3.5.0",
     "colors": "^1.1.2",
     "coveralls": "^2.11.9",
+    "esdoc": "^0.4.8",
+    "eslint": "^3.8.1",
     "ghooks": "^1.3.2",
     "mitm": "^1.3.1",
     "mocha": "^3.1.0",
@@ -87,5 +91,46 @@
       "src/**/*.js",
       "dist/**/*.js"
     ]
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "sourceType": "module"
+    },
+    "rules": {
+      "require-jsdoc": [
+        "error",
+        {
+          "require": {
+            "FunctionDeclaration": true,
+            "MethodDefinition": false,
+            "ClassDeclaration": false
+          }
+        }
+      ],
+      "valid-jsdoc": [
+        "error",
+        {
+          "prefer": {
+            "return": "returns",
+            "arg": "param",
+            "argument": "param"
+          },
+          "preferType": {
+            "object": "Object",
+            "string": "String",
+            "number": "Number",
+            "int": "Number",
+            "boolean": "Boolean",
+            "bool": "Boolean",
+            "array": "Array",
+            "JSON": "Object",
+            "Function": "function"
+          },
+          "requireReturn": false,
+          "requireParamDescription": true,
+          "requireReturnDescription": false
+        }
+      ]
+    }
   }
 }
