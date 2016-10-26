@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import Mitm from 'mitm'
 import colors from 'colors/safe'
+import appRoot from 'app-root-path'
 const mitm = Mitm()
 mitm.disable()
 
@@ -38,7 +39,7 @@ class Contentfaux {
       const config = pkg.config.contentfaux
       spaceid = config.spaceid
       apikey = config.apikey
-      dir = config.dir
+      dir = config.dir || dir
     } catch (err) {}
 
     this._config = {
@@ -83,6 +84,7 @@ class Contentfaux {
    */
   sync () {
     this._log(`Setting up Contentfaux`, 'title')
+    console.log(this._config)
     if (!this._config.spaceid || !this._config.apikey || !this._config.dir) {
       return Promise.reject(new Error('spaceid, apikey and directory are all required.'))
     }
@@ -173,7 +175,7 @@ class Contentfaux {
    * @returns {String}
    */
   _rootDir () {
-    return process.cwd()
+    return appRoot.path
   }
 
   /**

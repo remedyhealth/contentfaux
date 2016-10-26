@@ -39,6 +39,7 @@
   },
   "homepage": "https://github.com/remedyhealth/contentfaux#readme",
   "devDependencies": {
+    "app-root-path": "^2.0.1",
     "babel-cli": "^6.10.1",
     "babel-eslint": "^7.0.0",
     "babel-plugin-transform-object-assign": "^6.8.0",
@@ -75,6 +76,10 @@
       "pre-push": "npm t",
       "post-merge": "npm install && npm prune",
       "post-rewrite": "npm install && npm prune"
+    },
+    "contentfaux": {
+      "apikey": "1157ce98f62ebccc473a3fe59397c84fc685e5f1b7630ad56da07ccba3be50ca",
+      "spaceid": "cyn2ssr0iqx0"
     }
   },
   "browser": "./browser.js",
