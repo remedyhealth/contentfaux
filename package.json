@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "A way to stub requests to Contentful.",
   "main": "index.js",
+  "bin": "./index.js",
   "scripts": {
     "runtest": "npm run build && node ./ setup",
     "predoc": "rimraf docs",
