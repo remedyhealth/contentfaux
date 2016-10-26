@@ -126,18 +126,11 @@ class Contentfaux {
 
   /**
    * Begins the process of stubbing (intercepts ALL request)
-   * @param {Object} [config={}] The configuration object. Uses the package.json config and env initially.
-   * @param {String} config.spaceid - The contentful space id.
-   * @param {String} config.apikey - The contentful API key.
-   * @param {String} config.dir - The directory to save the mocked information. Reletive paths are fine.
-   * @param {Boolean} [config.preview=] - If preview, set to true.
    * @returns {Event} The event callback.
    */
-  stub (config = {}) {
-    Object.assign(this._config, config)
+  stub () {
     this._log('Stubbing Contentful...', 'title')
     this._stubbed = true
-    this._config = config
     mitm.enable()
     return mitm.on('request', this.request)
   }
