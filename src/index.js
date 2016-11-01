@@ -5,6 +5,8 @@ import fs from 'fs'
 import Mitm from 'mitm'
 import colors from 'colors/safe'
 import appRoot from 'app-root-path'
+import dotenv from 'dotenv'
+dotenv.config()
 const mitm = Mitm()
 mitm.disable()
 
@@ -84,7 +86,6 @@ class Contentfaux {
    */
   sync () {
     this._log(`Setting up Contentfaux`, 'title')
-    console.log(this._config)
     if (!this._config.spaceid || !this._config.apikey || !this._config.dir) {
       return Promise.reject(new Error('spaceid, apikey and directory are all required.'))
     }
