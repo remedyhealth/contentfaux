@@ -64,7 +64,7 @@ class Contentfaux {
           cmd = SETUP
           break
         case PREVIEW:
-          this._conifg.preview = true
+          this._config.preview = true
           break
         default:
           break
