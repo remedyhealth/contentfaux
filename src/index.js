@@ -6,7 +6,6 @@ import Mitm from 'mitm'
 import colors from 'colors/safe'
 import appRoot from 'app-root-path'
 import dotenv from 'dotenv'
-dotenv.config()
 const mitm = Mitm()
 mitm.disable()
 
