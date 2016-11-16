@@ -46,6 +46,7 @@ class Contentfaux {
       spaceid: process.env.CONTENTFAUX_SPACEID || spaceid,
       apikey: process.env.CONTENTFAUX_APIKEY || apikey,
       dir: process.env.CONTENTFAUX_DIR || dir,
+      autorun: !process.env.CONTENTFAUX_AUTORUN,
       cli: require.main === module
     }
 
@@ -69,12 +70,18 @@ class Contentfaux {
       }
     })
 
-    if (cmd === STUB) {
-      this.stub()
-    } else if (cmd === UNSTUB) {
-      this.unstub()
-    } else if (cmd === SETUP) {
-      this.sync()
+    this.unstub()
+
+    // if it is to autorun
+    if (this._config.autorun) {
+      if (cmd === STUB) {
+        this.stub()
+      } else if (cmd === UNSTUB) {
+        // already ran as part of init
+        // this.unstub()
+      } else if (cmd === SETUP) {
+        this.sync()
+      }
     }
   }
 
@@ -138,6 +145,7 @@ class Contentfaux {
    * Stops stubbing
    */
   unstub () {
+    this._log('Unstubbing Contentful...', 'title')
     this._stubbed = false
     mitm.off('request', this.request)
     mitm.disable()
@@ -188,7 +196,7 @@ class Contentfaux {
    * @param {String} folder - The folder name to clean, and copy data to.
    */
   _prepareFolder (folder) {
-    this._removeFolder(folder)
+    this._deleteFolderRecursive(folder)
     fs.mkdir(folder)
     const staticDir = path.resolve(__dirname, 'staticMockData')
     fs.readdirSync(staticDir).forEach((file, index) => {
@@ -196,24 +204,6 @@ class Contentfaux {
       const to = `${folder}/${file}`
       fs.createReadStream(from).pipe(fs.createWriteStream(to))
     })
-  }
-
-  /**
-   * Removes a folder and its contents recursively.
-   * @param {String} folder - The folder to remove.
-   */
-  _removeFolder (folder) {
-    if (fs.existsSync(folder)) {
-      fs.readdirSync(folder).forEach((file, index) => {
-        const curPath = `${folder}/${file}`
-        if (fs.lstatSync(curPath).isDirectory()) { // recurse
-          this._deleteFolderRecursive(curPath)
-        } else { // delete file
-          fs.unlinkSync(curPath)
-        }
-      })
-      fs.rmdirSync(folder)
-    }
   }
 
   /**
