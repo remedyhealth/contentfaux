@@ -137,6 +137,24 @@ class Contentfaux {
   stub () {
     this._log('Stubbing Contentful...', 'title')
     this._stubbed = true
+    this._data = {}
+    const dir = path.resolve(this._rootDir(), this._config.dir)
+    try {
+      const files = fs.readdirSync(dir)
+      for (let file of files) {
+        const type = file.substr(0, file.length - 5)
+        this._data[type] = JSON.parse(fs.readFileSync(`${dir}/${file}`, 'utf8'))
+      }
+    } catch (err) {
+      console.error(err.message)
+      const mockDir = this._mockDir()
+      if (!this._data.Array) {
+        this._data.Array = JSON.parse(fs.readFileSync(`${mockDir}/Array.json`))
+      }
+      if (!this._data.Error) {
+        this._data.Error = JSON.parse(fs.readFileSync(`${mockDir}/Error.json`))
+      }
+    }
     mitm.enable()
     return mitm.on('request', this.request)
   }
@@ -147,6 +165,7 @@ class Contentfaux {
   unstub () {
     this._log('Unstubbing Contentful...', 'title')
     this._stubbed = false
+    this._data = {}
     mitm.off('request', this.request)
     mitm.disable()
   }
@@ -179,16 +198,24 @@ class Contentfaux {
   }
 
   /**
+   * Returns the mocked directory.
+   * @returns {String}
+   */
+  _mockDir () {
+    return path.resolve(__dirname, 'staticMockData')
+  }
+
+  /**
    * Returns an stubbed content type.
    * @param {String} type - The content type.
    * @returns {Object} The json stubbed object.
    */
   _getContentType (type) {
-    if (this._stubbed) {
-      return require(path.resolve(this._rootDir(), this._config.dir, `${type}.json`))
+    if (this._stubbed && this._data[type]) {
+      return this._data[type]
     }
 
-    return {}
+    return this._data.Array
   }
 
   /**
@@ -198,7 +225,7 @@ class Contentfaux {
   _prepareFolder (folder) {
     this._deleteFolderRecursive(folder)
     fs.mkdir(folder)
-    const staticDir = path.resolve(__dirname, 'staticMockData')
+    const staticDir = this._mockDir()
     fs.readdirSync(staticDir).forEach((file, index) => {
       const from = `${staticDir}/${file}`
       const to = `${folder}/${file}`
