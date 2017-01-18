@@ -97,7 +97,6 @@
   },
   "nyc": {
     "include": [
-      "src/**/*.js",
       "dist/**/*.js"
     ]
   },

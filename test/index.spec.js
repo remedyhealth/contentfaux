@@ -6,10 +6,9 @@ import fs from 'fs'
 import chai from 'chai'
 const expect = chai.expect
 
-import ContentfauxSrc from '../src'
 import ContentfauxDist from '../dist'
 
-function test (obj, name) {
+const test = (obj, name) => {
   describe(`${name}`, () => {
     describe('init', () => {
 
@@ -60,5 +59,4 @@ function test (obj, name) {
   })
 }
 
-test(ContentfauxSrc, 'Source')
-test(ContentfauxDist, 'Source')
+test(ContentfauxDist, 'Dist')
