@@ -197,6 +197,10 @@ class Contentfaux {
     return appRoot.path
   }
 
+  /**
+   * Returns the mocked directory.
+   * @returns {String}
+   */
   _mockDir () {
     return path.resolve(__dirname, 'staticMockData')
   }
