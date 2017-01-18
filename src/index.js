@@ -142,9 +142,19 @@ class Contentfaux {
     try {
       const files = fs.readdirSync(dir)
       for (let file of files) {
-        this._data[file.substr(0, file.length - 5)] = JSON.parse(fs.readFileSync(`${dir}/${file}`, 'utf8'))
+        const type = file.substr(0, file.length - 5)
+        this._data[type] = JSON.parse(fs.readFileSync(`${dir}/${file}`, 'utf8'))
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err.message)
+      const mockDir = this._mockDir()
+      if (!this._data.Array) {
+        this._data.Array = JSON.parse(fs.readFileSync(`${mockDir}/Array.json`))
+      }
+      if (!this._data.Error) {
+        this._data.Error = JSON.parse(fs.readFileSync(`${mockDir}/Error.json`))
+      }
+    }
     mitm.enable()
     return mitm.on('request', this.request)
   }
@@ -187,6 +197,10 @@ class Contentfaux {
     return appRoot.path
   }
 
+  _mockDir () {
+    return path.resolve(__dirname, 'staticMockData')
+  }
+
   /**
    * Returns an stubbed content type.
    * @param {String} type - The content type.
@@ -197,7 +211,7 @@ class Contentfaux {
       return this._data[type]
     }
 
-    return {items: []}
+    return this._data.Array
   }
 
   /**
@@ -207,7 +221,7 @@ class Contentfaux {
   _prepareFolder (folder) {
     this._deleteFolderRecursive(folder)
     fs.mkdir(folder)
-    const staticDir = path.resolve(__dirname, 'staticMockData')
+    const staticDir = this._mockDir()
     fs.readdirSync(staticDir).forEach((file, index) => {
       const from = `${staticDir}/${file}`
       const to = `${folder}/${file}`
