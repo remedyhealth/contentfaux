@@ -182,9 +182,8 @@ class Contentfaux {
       parsed.limit = 5
     }
 
-    for (let i = 1; i < parsed.limit; i++) {
-      ret.items.push(ret.items[0])
-    }
+    const arr = new Array(parsedInt(parsed.limit)).fill(ret.items[0])
+    ret.items = arr
 
     res.end(JSON.stringify(ret))
   }
