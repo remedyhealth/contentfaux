@@ -185,6 +185,9 @@ class Contentfaux {
     const arr = new Array(parseInt(parsed.limit)).fill(ret.items[0])
     ret.items = arr
 
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Headers', 'X-Contentful-User-Agent,Authorization,user-agent')
+
     res.end(JSON.stringify(ret))
   }
 
