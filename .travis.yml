@@ -7,10 +7,10 @@ notifications:
   email: false
 node_js:
   - node
+  - '8'
+  - '7'
+  - '6'
   - '5'
-  - '4'
-  - iojs-v3
-  - '0.12'
 before_install:
   - npm i -g npm@^2.0.0
 before_script:
